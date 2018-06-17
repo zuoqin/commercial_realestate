@@ -1,5 +1,6 @@
-(ns realty.server
+(ns commerce.server
   (use (incanter core charts excel))
+  (use dk.ative.docjure.spreadsheet)
   (:require [clojure.java.io :as io]
             [compojure.core :refer [ANY GET PUT POST DELETE defroutes]]
             [compojure.route :refer [resources]]
@@ -15,7 +16,7 @@
             [clj-time.core :as t]
 
             [clojure.java.io :as io]
-
+            
             [ring.adapter.jetty :refer [run-jetty]])
   (:gen-class))
 
@@ -124,7 +125,7 @@
 )
 
 
-(defn create-client-report [client]
+(defn get-analogs [params]
   (let [
 
     newpositions []
@@ -132,9 +133,7 @@
 
 
     ]
-    (save-xls ["positions" (dataset [:security :isin :price :wap :amount :usdvalue :rubvalue :usdcosts :rubcosts :assettype :currency :anr :target :duration :yield :dvddate :putdate :multiple] (sort (comp comp-positions) newpositions)) 
-               ;;"transactions" (dataset [:security :isin :direction :nominal :wap :wapusd :waprub :date] (sort (comp comp-deals) newdeals))
-    ] (str xlsdir client ".xlsx"))
+
     "Success"
   )
 )
@@ -159,13 +158,19 @@
     {:status 200
      :headers {"Content-Type" "text/html; charset=utf-8"}
      :body (io/input-stream (io/resource "public/index.html"))})
-  (GET "/tradeidea/:token" [token]
+
+
+  (POST "/calcprice" []
     (let [
-          file 1.0
+          analogs  (->> (load-workbook-from-resource "book.xlsx")
+     (select-sheet "sell")
+     (select-columns {:A :city, :B :district, :E :address, :P :totalsquare, :X :repair, :Y :assignment, :AC :price, :AG :source}))
+
+
     ]
     {:status 200
      :headers {"Content-Type" "text/html; charset=utf-8"}
-     :body (io/input-stream (io/resource "public/tradeidea.html"))}
+     :body (json/write-str {:analogs analogs})}
     )
   )
   (GET "/report" []
@@ -175,13 +180,13 @@
     {:status 200 :headers {"Content-Type" "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Content-Disposition" (str "attachment;filename=" "report" ".xlsx") } :body (io/input-stream (str xlsdir "report" ".xlsx") )}
     )
   )
-  (GET "/clientexcel/:client" [client]
-    (let [
-          file (create-client-report client)
-    ]
-    {:status 200 :headers {"Content-Type" "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Content-Disposition" (str "attachment;filename=" client ".xlsx")} :body (io/input-stream (str xlsdir client ".xlsx") )}
-    )
-  )
+  ;; (GET "/clientexcel/:client" [client]
+  ;;   (let [
+  ;;         file (create-client-report client)
+  ;;   ]
+  ;;   {:status 200 :headers {"Content-Type" "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Content-Disposition" (str "attachment;filename=" client ".xlsx")} :body (io/input-stream (str xlsdir client ".xlsx") )}
+  ;;   )
+  ;; )
   (GET "/clientbloombergportf/:client" [client]
     (let [
       url (str apipath "api/bloomberg_portf?portf=" client)

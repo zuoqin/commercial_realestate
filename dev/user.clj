@@ -1,5 +1,5 @@
 (ns user
-  (:require [realty.server]
+  (:require [commerce.server]
             [ring.middleware.reload :refer [wrap-reload]]
             [figwheel-sidecar.repl-api :as figwheel]))
 
@@ -9,7 +9,7 @@
 (set! *warn-on-reflection* true)
 (set! *unchecked-math* :warn-on-boxed)
 (def http-handler
-  (wrap-reload #'realty.server/http-handler))
+  (wrap-reload #'commerce.server/http-handler))
 
 (defn run []
   (figwheel/start-figwheel!))

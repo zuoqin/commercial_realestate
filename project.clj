@@ -1,4 +1,4 @@
-(defproject realty "0.1.0-SNAPSHOT"
+(defproject commerce "0.1.0-SNAPSHOT"
   :description "FIXME: write description"
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
@@ -26,12 +26,14 @@
 
                  [clj-http "2.3.0"]
                  [org.clojure/data.json "0.2.6"] 
-
+                 [dk.ative/docjure "1.11.0"]
                  [cljsjs/chartjs "2.6.0-0"]
                 ]
 
   :plugins [[lein-cljsbuild "1.1.3"]
-            [lein-environ "1.0.3"]]
+            [lein-environ "1.0.3"]
+            [cider/cider-nrepl "0.17.0"]
+           ]
 
   :min-lein-version "2.6.1"
 
@@ -41,11 +43,11 @@
 
   :clean-targets ^{:protect false} [:target-path :compile-path "resources/public/js"]
 
-  :uberjar-name "realty.jar"
+  :uberjar-name "commerce.jar"
 
   ;; Use `lein run` if you just want to start a HTTP server, without figwheel
-  :main realty.server
-  :aot [realty.server]
+  :main commerce.server
+  :aot [commerce.server]
 
 
   ;; nREPL by default starts in the :main namespace, we want to start in `user`
@@ -59,11 +61,11 @@
 
                 :figwheel true
                 ;; Alternatively, you can configure a function to run every time figwheel reloads.
-                ;; :figwheel {:on-jsload "realty.core/on-figwheel-reload"}
+                ;; :figwheel {:on-jsload "commerce.core/on-figwheel-reload"}
 
-                :compiler {:main realty.main
+                :compiler {:main commerce.main
                            :asset-path "js/compiled/out"
-                           :output-to "resources/public/js/compiled/realty.js"
+                           :output-to "resources/public/js/compiled/commerce.js"
                            :output-dir "resources/public/js/compiled2/out"
                            :source-map-timestamp true
                            :optimizations :none
@@ -72,9 +74,9 @@
                {:id "max"
                 :source-paths ["src/cljs" "src/cljc"]
                 :jar true
-                :compiler {:main realty.main
+                :compiler {:main commerce.main
                            :asset-path "js/compiled/out"
-                           :output-to "resources/public/js/compiled1/realty.js"
+                           :output-to "resources/public/js/compiled1/commerce.js"
                            :output-dir "resources/public/js/compiled1/out"
                            :source-map-timestamp false
                            :optimizations :none
@@ -93,15 +95,15 @@
                {:id "test"
                 :source-paths ["src/cljs" "test/cljs" "src/cljc" "test/cljc"]
                 :compiler {:output-to "resources/public/js/compiled/testable.js"
-                           :main realty.test-runner
+                           :main commerce.test-runner
                            :optimizations :none}}
 
                {:id "min"
                 :source-paths ["src/cljs" "src/cljc"]
                 :jar true
-                :compiler {:main realty.main
+                :compiler {:main commerce.main
                            :asset-path "js/compiled/out"
-                           :output-to "resources/public/js/compiled/realty.js"
+                           :output-to "resources/public/js/compiled/commerce.js"
                            :output-dir "resources/public/js/compiled/out"
                            :source-map-timestamp false
                            :optimizations :simple

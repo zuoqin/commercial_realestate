@@ -15,7 +15,9 @@
                              [org.clojure/tools.nrepl "0.2.12"]]
 
    :plugins [[lein-figwheel "0.5.4-4"]
-             [lein-doo "0.1.6"]]
+             [lein-doo "0.1.6"]
+             [cider/cider-nrepl "0.17.0"]
+             ]
 
    :source-paths ["dev"]
    :repl-options {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}

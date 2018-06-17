@@ -1,4 +1,4 @@
-(ns realty.common)
+(ns commerce.common)
 
 (defn shared-fn
   "A function that is shared between clj and cljs"

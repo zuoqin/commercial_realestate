@@ -1,4 +1,4 @@
-(ns realty.core
+(ns commerce.core
   (:use [net.unit8.tower :only [t]])
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [om.core :as om :include-macros true]
@@ -15,7 +15,7 @@
             [cljs-time.local :as tl]
             [cljs.core.async :refer [put! dropping-buffer chan take! <! >! timeout close!]]
             [om-bootstrap.button :as b]
-            [realty.settings :as settings]
+            [commerce.settings :as settings]
             [clojure.string :as str]
             [goog.string :as gstring]
             [goog.string.format]
@@ -38,7 +38,7 @@
 (def allparams ["id",  "RoomsNum", "Storey", "StoreysNum",  "RawAddress", "MicroDistrict", "RepairRaw","BuildingYear", "LivingSpaceArea", "KitchenArea", "SubwayTime"])
 
 
-(defonce app-state (atom {:state 0 :sort-list 1 :isloading false :selectedimage 3031107 :object {:param ["id",  "RoomsNum", "Storey", "StoreysNum",  "RawAddress", "MicroDistrict", "RepairRaw","BuildingYear", "LivingSpaceArea", "KitchenArea", "SubwayTime"] :roomsnum 2 :analogs [] :foundation "" :project "" :data 0.0 :lat 55.751244 :lon 37.618423 :repair "косметический" :leavingsquare 73.5 :kitchensquare 18.9 :totalsquare 98.7 :city "Москва" :buildingtype "кирпичный" :analogscount 50 :buildingyear 2000 :ceilingheight 2.6 :storey 4 :storeysnum 9 :pricePerMetr 0.0 :metrodistance 15 :houseAvrgPrice 0.0 :regionAvrgPrice 0.0 :cityAvrgPrice 0.0}}))
+(defonce app-state (atom {:state 0 :sort-list 1 :isloading false :selectedimage "https://www.cian.ru/sale/commercial/169073901/" :object {:param ["id",  "RoomsNum", "Storey", "StoreysNum",  "RawAddress", "MicroDistrict", "RepairRaw","BuildingYear", "LivingSpaceArea", "KitchenArea", "SubwayTime"] :repair "Требуется косметический ремонт" :analogs [] :foundation "" :project "" :data 0.0 :lat 55.751244 :lon 37.618423 :objecttype "Помещение" :leavingsquare 73.5 :kitchensquare 18.9 :totalsquare 98.7 :city "Москва" :assignment "Свободного назначения" :analogscount 50 :buildingyear 2000 :ceilingheight 2.6 :storey 4 :storeysnum 9 :pricePerMetr 0.0 :metrodistance 15 :houseAvrgPrice 0.0 :regionAvrgPrice 0.0 :cityAvrgPrice 0.0}}))
 
 
 
