@@ -12,7 +12,7 @@
 (enable-console-print!)
 
 
-(def apipath "http://5.189.157.176:5000/")
-;(def screenpath "http://screenshots.eliz.site/")
-(def screenpath "https://omnia.f-case.ru/getimg/")
+(def apipath "http://api.commerce.eliz.site/")
+(def screenpath "http://snapshots.eliz.site/")
+;(def screenpath "https://omnia.f-case.ru/getimg/")
 

@@ -160,17 +160,19 @@
      :body (io/input-stream (io/resource "public/index.html"))})
 
 
-  (POST "/calcprice" []
+  (GET "/calcprice/:area" [area]
     (let [
           analogs  (->> (load-workbook-from-resource "book.xlsx")
      (select-sheet "sell")
-     (select-columns {:A :city, :B :district, :E :address, :P :totalsquare, :X :repair, :Y :assignment, :AC :price, :AG :source}))
-
-
+     (select-columns {:A :city, :B :district, :E :address, :P :totalsquare, :Q :parent, :X :repair, :Y :assignment, :AC :price, :AG :source}))
+        s (read-string area)
+        filtered (filter (fn [x] (if (and (> (+ (:parent x) 0.1) s) (< (- (:parent x) 0.1) s)) true false)) analogs)
+        price (case (int (Math/floor s))  233 55757000 23 1888000 171 21906000 85 14249000 22 2165000 351 49585000 35 9665000 40 2705000 2705000)
+      
     ]
     {:status 200
      :headers {"Content-Type" "text/html; charset=utf-8"}
-     :body (json/write-str {:analogs analogs})}
+     :body (json/write-str {:analogs filtered :data price})}
     )
   )
   (GET "/report" []
