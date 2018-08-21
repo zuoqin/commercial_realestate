@@ -23,7 +23,8 @@
 (def custom-formatter (f/formatter "dd/MM/yyyy"))
 ;;(def apipath "http://10.20.35.21:3000/")
 (def apipath "http://localhost:3000/")
-(def xlsdir "/root/dev/FinCase/")
+;(def xlsdir "/root/dev/FinCase/")
+(def xlsdir "/mnt/admin/")
 
 (def bloombergportdir "c:/DEV/output/")
 ;(def imagepath "C:/DEV/clojure/sberpb/sberstatic/resources/public/img/tradeidea/")

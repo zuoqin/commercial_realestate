@@ -510,7 +510,7 @@
                     (dom/div {:className "col-xs-1" :style {:font-size "xx-small" :cursor "pointer" :padding-left "0px" :padding-right "3px" :padding-top "0px" :text-align "center"}}
                       "6"
                     )
-                    (dom/div {:className "col-xs-1" :style {:font-size "xx-small" :cursor "pointer" :padding-left "0px" :padding-right "3px" :padding-top "0px" :text-align "center"}}
+                    (dom/div {:className "col-xs-3" :style {:font-size "xx-small" :cursor "pointer" :padding-left "0px" :padding-right "3px" :padding-top "0px" :text-align "center"}}
                       "7"
                     )
                     (dom/div {:className "col-xs-1" :style {:font-size "xx-small" :cursor "pointer" :padding-left "0px" :padding-right "3px" :padding-top "0px" :text-align "center"}}
@@ -519,9 +519,9 @@
                     (dom/div {:className "col-xs-1" :style {:font-size "xx-small" :cursor "pointer" :padding-left "0px" :padding-right "3px" :padding-top "0px" :text-align "center"}}
                       "9"
                     )
-                    (dom/div {:className "col" :style {:font-size "xx-small" :cursor "pointer" :padding-left "0px" :padding-right "3px" :padding-top "0px" :text-align "center"}}
-                      "10"
-                    )
+                    ;; (dom/div {:className "col" :style {:font-size "xx-small" :cursor "pointer" :padding-left "0px" :padding-right "3px" :padding-top "0px" :text-align "center"}}
+                    ;;   "10"
+                    ;; )
                   )
                 )
               )
@@ -590,7 +590,7 @@
                         (dom/div {:className "col-xs-1" :style {:font-size "xx-small" :cursor "pointer" :padding-left "0px" :padding-right "3px" :padding-top "0px" :text-align "center"}}
                           (gstring/format "%.2f" (:koeff6 item))
                         )
-                        (dom/div {:className "col-xs-1" :style {:font-size "xx-small" :cursor "pointer" :padding-left "0px" :padding-right "3px" :padding-top "0px" :text-align "center"}}
+                        (dom/div {:className "col-xs-3" :style {:font-size "xx-small" :cursor "pointer" :padding-left "0px" :padding-right "3px" :padding-top "0px" :text-align "center"}}
                           (gstring/format "%.2f" (:koeff7 item))
                         )
                         (dom/div {:className "col-xs-1" :style {:font-size "xx-small" :cursor "pointer" :padding-left "0px" :padding-right "3px" :padding-top "0px" :text-align "center"}}
@@ -599,9 +599,9 @@
                         (dom/div {:className "col-xs-1" :style {:font-size "xx-small" :cursor "pointer" :padding-left "0px" :padding-right "3px" :padding-top "0px" :text-align "center"}}
                           (gstring/format "%.2f" (:koeff9 item))
                         )
-                        (dom/div {:className "col" :style {:font-size "xx-small" :cursor "pointer" :padding-left "0px" :padding-right "3px" :padding-top "0px" :text-align "center"}}
-                          (gstring/format "%.2f" (:koeff item))
-                        )
+                        ;; (dom/div {:className "col" :style {:font-size "xx-small" :cursor "pointer" :padding-left "0px" :padding-right "3px" :padding-top "0px" :text-align "center"}}
+                        ;;   (gstring/format "%.2f" (:koeff item))
+                        ;; )
                       ))
                   )
 
