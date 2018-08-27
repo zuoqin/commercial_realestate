@@ -815,6 +815,9 @@
     (swap! commerce/app-state assoc-in [:state] 1)
     (swap! commerce/app-state assoc-in [:object :calcanalogs] [])
     (swap! commerce/app-state assoc-in [:object :analogs] [])
+    ;; (if (not (:approach (:object @commerce/app-state)))
+    ;;   (swap! commerce/app-state assoc-in [:object :approach] "аренда")
+    ;; )
     (POST (str settings/apipath "estimate") {
       :handler OnGetData
       :error-handler error-handler
@@ -1127,6 +1130,26 @@
 
 
         (dom/div {:className "row" :style {:width "100%" :margin-left "15px" :margin-right "15px"}}
+            (dom/div {:className "row"}
+              (dom/div {:className "col-xs-3 col-xs-offset-0 col-sm-2 col-sm-offset-3" :style {:padding-left "0px" :padding-right "0px"}}
+                (dom/h5 (str "Подход к оценке:"))
+              )
+              (dom/div {:className "col-xs-8 col-sm-4" :style {:margin-top "4px" :padding-right "0px" :padding-left "0px"}}
+                (dom/form
+                  (dom/label 
+                    (dom/input {:id "approach" :type "radio" :checked (:approach (:object @data)) :onChange (fn [e] (swap! commerce/app-state assoc-in [:object :approach] (.. e -nativeEvent -target -checked))) :value (:approach (:object @data)) :style {:margin-right "5px"}})
+                    "Сравнительный"
+                  )
+                  (dom/label {:style {:margin-left "10px"}}
+                    (dom/input {:id "approach11" :type "radio" :checked (not (:approach (:object @data))) :onChange (fn [e] (swap! commerce/app-state assoc-in [:object :approach] (not (.. e -nativeEvent -target -checked)))) :value (not (:approach (:object @data))) :style {:margin-right "5px"}})
+                    " Доходный"
+                  )
+                )
+              )
+              (dom/div {:className "col-xs-1" :style {:margin-top "4px" :padding-right "0px" :padding-left "30px" :text-align "left"}}
+                (dom/span {:className "asterisk"} "*")
+              )
+            )
             (dom/div {:className "row"}
               (dom/div {:className "col-xs-3 col-xs-offset-0 col-sm-2 col-sm-offset-3" :style {:padding-left "0px" :padding-right "0px"}}
                 (dom/h5 (str "Тип объекта:"))

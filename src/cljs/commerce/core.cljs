@@ -38,7 +38,7 @@
 (def allparams ["id",  "RoomsNum", "Storey", "StoreysNum",  "RawAddress", "MicroDistrict", "RepairRaw","BuildingYear", "LivingSpaceArea", "KitchenArea", "SubwayTime"])
 
 
-(defonce app-state (atom {:showcoeff true :state 0 :sort-list 1 :isloading false :selectedimage "https://www.cian.ru/sale/commercial/169073901/" :object {:hasshopwindows true :isbuildingliving true :houseline true :isentrance true :param ["id",  "RoomsNum", "Storey", "StoreysNum",  "RawAddress", "MicroDistrict", "RepairRaw","BuildingYear", "LivingSpaceArea", "KitchenArea", "SubwayTime"] :repair "стандарт" :analogs [] :foundation "" :project "" :data 0.0 :lat 55.751244 :lon 37.618423 :objecttype "Помещение" :leavingsquare 73.5 :kitchensquare 18.9 :totalsquare 40.7 :city "Москва" :assignment "псн" :analogscount 5 :buildingyear 2000 :ceilingheight 2.6 :storey 4 :storeysnum 9 :pricePerMetr 0.0 :metrodistance 15 :houseAvrgPrice 0.0 :regionAvrgPrice 0.0 :cityAvrgPrice 0.0}}))
+(defonce app-state (atom {:showcoeff true :state 0 :sort-list 1 :isloading false :selectedimage "https://www.cian.ru/sale/commercial/169073901/" :object {:approach true :hasshopwindows true :isbuildingliving true :houseline true :isentrance true :param ["id",  "RoomsNum", "Storey", "StoreysNum",  "RawAddress", "MicroDistrict", "RepairRaw","BuildingYear", "LivingSpaceArea", "KitchenArea", "SubwayTime"] :repair "стандарт" :analogs [] :foundation "" :project "" :data 0.0 :lat 55.751244 :lon 37.618423 :objecttype "Помещение" :leavingsquare 73.5 :kitchensquare 18.9 :totalsquare 40.7 :city "Москва" :assignment "псн" :analogscount 5 :buildingyear 2000 :ceilingheight 2.6 :storey 1 :storeysnum 9 :pricePerMetr 0.0 :metrodistance 15 :houseAvrgPrice 0.0 :regionAvrgPrice 0.0 :cityAvrgPrice 0.0}}))
 
 
 
