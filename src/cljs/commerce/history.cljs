@@ -406,7 +406,7 @@
               (let [ 
                 square (str (get item "totalsquare"))
                 ;tr1 (.log js/console (str item))
-                rowstyle (if (= 0 (:isdepr item)) {:margin-right "0px" :margin-left "0px" } {:margin-right "0px" :margin-left "0px" :background-color "beige"})
+                rowstyle {:margin-right "0px" :margin-left "0px" }
                 ]
                 (dom/div {:className "row tablerow" :style rowstyle :onClick (fn [e] (gotomain item))}
                   (dom/div {:className "col-xs-5":style {:text-align "left" :border "1px solid lightgrey" :padding-left "0px" :padding-right "0px" :padding-top "6px" :overflow "hidden" :padding-bottom "6px"}}
@@ -478,7 +478,7 @@
   (let [
     lat (get analog "lat")
     lon (get analog "lon")
-    address (get analog "address")
+    address (if (or (nil? (get analog "address")) (= 0 (count (get analog "address")))) (str "(" lat ", " lon ")") (get analog "address")) 
     approach (get analog "approach")
     totalsquare (get analog "totalarea")
     repair (get analog "conditiontype")
@@ -651,7 +651,7 @@
   )
   (set! (.-title js/document) "Price calculation")
   (setcontrols 46)
-
+  (getdata)
   (swap! commerce/app-state assoc-in [:view] 1)
   (set! (.-title js/document) (str "Независимая оценка объектов" (if (> (count (:address (:object @commerce/app-state))) 0) ": ") (:address (:object @commerce/app-state))))
 )
@@ -806,9 +806,9 @@
         )
 
         (dom/div {:className "row" :style {:padding-top "10px" :display "block"}}
-          (dom/div {:className "col-xs-4" :style {:text-align "center"}}
-            (b/button {:className (if (= (:state @data) 0) "btn btn-primary" "btn btn-primary m-progress") :onClick (fn [e] (getdata))} "Задать фильтр")
-          )
+          ;; (dom/div {:className "col-xs-4" :style {:text-align "center"}}
+          ;;   (b/button {:className (if (= (:state @data) 0) "btn btn-primary" "btn btn-primary m-progress") :onClick (fn [e] (getdata))} "Задать фильтр")
+          ;; )
           (dom/div {:className "col-xs-4" :style {:text-align "center"}}
             (b/button {:className (if (= (:state @data) 0) "btn btn-primary" "btn btn-primary m-progress") :onClick (fn [e] (sec/dispatch! "/main"))} "На главную")
           )

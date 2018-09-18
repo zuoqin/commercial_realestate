@@ -434,10 +434,46 @@
   (let [
     id (js/parseInt (subs (.. e -currentTarget -id) 8))
     isinclude (.. e -currentTarget -checked)
-    newanalogs (map (fn [x] (if (= id (:id x)) (assoc-in x [:isinclude] isinclude) x)) (:calcanalogs (:object @commerce/app-state)))
+    newanalogs (map (fn [x] (if (= id (:id x)) (assoc-in x [:isinclude] isinclude) x)) (:analogs (:object @commerce/app-state)))
+    isinclude (if (> (count newanalogs) 0) isinclude true)
+
+    filtered (filter (fn [x] (:isinclude x)) newanalogs)
+    isinclude (if (> (count filtered) 0) isinclude true)
+    newanalogs (map (fn [x] (if (= id (:id x)) (assoc-in x [:isinclude] isinclude) x)) newanalogs)
+    filtered (filter (fn [x] (:isinclude x)) newanalogs)
+
+    theprice (reduce (fn [x y] {:sum (+ (:sum x) (/ (:price_correction y) (if (= 0 (:approach (:object @commerce/app-state))) (:totalsquare y) 1) ))}) {:sum 0} filtered)
+    newprice (/ (:sum theprice) (count filtered))
+
+    koeff4 newprice
+    koeff5 (* (:totalsquare (:object @commerce/app-state)) newprice)
+    koeff6_p (/ (:koeff6 (:object @commerce/app-state)) (:koeff5 (:object @commerce/app-state)))
+    koeff6 (* koeff6_p koeff5)
+    koeff7 (- koeff5 koeff6)
+    koeff8_p (/ (:koeff8 (:object @commerce/app-state)) (:koeff5 (:object @commerce/app-state)))
+    koeff8 (* koeff8_p koeff5)
+
+    koeff9 (- koeff7 koeff8)
+    koeff10 (* (/ koeff9 (:koeff3 (:object @commerce/app-state))) 100.0)
+    koeff13 (- koeff10 (:koeff11 (:object @commerce/app-state)))
+    koeff12 (/ koeff13 (:totalsquare (:object @commerce/app-state)))
     ]
-    ;(.log js/console (str "id:" id ";" isinclude))
-    (swap! commerce/app-state assoc-in [:object :calcanalogs] newanalogs)
+    (.log js/console (str "id:" id ";" isinclude))
+    (swap! commerce/app-state assoc-in [:object :analogs] newanalogs)
+    (swap! commerce/app-state assoc-in [:object :pricePerMetr] (case (:approach (:object @commerce/app-state)) 0 newprice 1 koeff12 newprice)
+
+)
+    (swap! commerce/app-state assoc-in [:object :koeff4] newprice)
+    (swap! commerce/app-state assoc-in [:object :koeff5] koeff5)
+    (swap! commerce/app-state assoc-in [:object :koeff6] koeff6)
+    (swap! commerce/app-state assoc-in [:object :koeff7] koeff7)
+    (swap! commerce/app-state assoc-in [:object :koeff8] koeff8)
+    (swap! commerce/app-state assoc-in [:object :koeff9] koeff9)
+    (swap! commerce/app-state assoc-in [:object :koeff10] koeff10)
+    (swap! commerce/app-state assoc-in [:object :koeff12] koeff12)
+    (swap! commerce/app-state assoc-in [:object :koeff13] koeff13)
+    (swap! commerce/app-state assoc-in [:object :data] (case (:approach (:object @commerce/app-state)) 0 (* (:totalsquare (:object @commerce/app-state)) (/ (:sum theprice) (count filtered))) 1 koeff13 (* (:totalsquare (:object @commerce/app-state)) (/ (:sum theprice) (count filtered)))) )
+    
   )
 )
 
@@ -448,7 +484,7 @@
       
     ]
     (let [
-      ;tr1 (.log js/console  (:key (om/get-state owner)))
+     tr1 (.log js/console  (:key (om/get-state owner)))
       
       ]
       (if (> (count (:analogs (:object @commerce/app-state))) 0)
@@ -459,7 +495,7 @@
               ;; (dom/div {:className "col-xs-5  col-xs-offset-0" :style {:text-align "center"}}
               ;;   "Адрес"
               ;; )
-              (dom/div {:id "address" :className (if (:showcoeff @commerce/app-state) "col-xs-2" "col-xs-5") :style {:cursor "pointer" :padding-left "0px" :padding-right "3px" :padding-top "5px" :text-align "center" :background-image (case (:sort-list @data) 1 "url(images/sort_asc.png" 2 "url(images/sort_desc.png" "url(images/sort_both.png") :background-repeat "no-repeat" :background-position "right center"} :onClick (fn [e] (swap! commerce/app-state assoc-in [:sort-list] (case (:sort-list @data) 1 2 1)))}
+              (dom/div {:id "address" :className (if (:showcoeff @commerce/app-state) "col-xs-2" "col-xs-4") :style {:cursor "pointer" :padding-left "0px" :padding-right "3px" :padding-top "5px" :text-align "center" :background-image (case (:sort-list @data) 1 "url(images/sort_asc.png" 2 "url(images/sort_desc.png" "url(images/sort_both.png") :background-repeat "no-repeat" :background-position "right center"} :onClick (fn [e] (swap! commerce/app-state assoc-in [:sort-list] (case (:sort-list @data) 1 2 1)))}
                           "Адрес"
                         )
               (dom/div {:className "col-xs-1" :style {:padding-top "5px" :text-align "center"}}
@@ -469,9 +505,11 @@
               (dom/div {:className (if (:showcoeff @commerce/app-state) "col-xs-1" "col-xs-1") :style {:padding-left "0px" :padding-right "0px" :padding-top "5px" :text-align "center"}}
                 "Вход"
               )
+              (if (not (:showcoeff @commerce/app-state))
+                (dom/div {:className (if (:showcoeff @commerce/app-state) "col-xs-1" "col-xs-1") :style {:padding-left "0px" :padding-right "0px" :padding-top "5px" :text-align "center"}}
+                  "Линия застройки"
+                )
 
-              (dom/div {:className (if (:showcoeff @commerce/app-state) "col-xs-1" "col-xs-1") :style {:padding-left "0px" :padding-right "0px" :padding-top "5px" :text-align "center"}}
-                "Линия застройки"
               )
 
 
@@ -496,7 +534,7 @@
               )
 
               (dom/div {:className (if (:showcoeff @commerce/app-state) "col-xs-1" "col-xs-1") :style {:cursor "pointer" :padding-left "0px" :padding-right "3px" :padding-top "5px" :text-align "center" :background-image (case (:sort-list @data) 3 "url(images/sort_asc.png" 4 "url(images/sort_desc.png" "url(images/sort_both.png") :background-repeat "no-repeat" :background-position "right center"} :onClick (fn [e] (swap! commerce/app-state assoc-in [:sort-list] (case (:sort-list @data) 3 4 3)))}
-                          "Общая площадь"
+                          "Общая площадь, кв. м"
               )
 
               (dom/div {:className (if (:showcoeff @commerce/app-state) "col-xs-3" "col-xs-1")}
@@ -507,11 +545,11 @@
                                  "Цена, руб."
                      )
                     1 (dom/div {:className (if (:showcoeff @commerce/app-state) "col-xs-6" "col-xs-10") :style {:cursor "pointer" :padding-left "0px" :padding-right "3px" :padding-top "5px" :text-align "center" :background-image (case (:sort-list @data) 5 "url(images/sort_asc.png" 6 "url(images/sort_desc.png" "url(images/sort_both.png") :background-repeat "no-repeat" :background-position "right center"} :onClick (fn [e] (swap! commerce/app-state assoc-in [:sort-list] (case (:sort-list @data) 5 6 5)))}
-                                "Арендная ставка, руб. кв.м/год с НДС без КП"
+                                "Арендная ставка предложения, руб./кв.м в год с НДС без КП"
                      )
                
                     2 (dom/div {:className (if (:showcoeff @commerce/app-state) "col-xs-6" "col-xs-10") :style {:cursor "pointer" :padding-left "0px" :padding-right "3px" :padding-top "5px" :text-align "center" :background-image (case (:sort-list @data) 5 "url(images/sort_asc.png" 6 "url(images/sort_desc.png" "url(images/sort_both.png") :background-repeat "no-repeat" :background-position "right center"} :onClick (fn [e] (swap! commerce/app-state assoc-in [:sort-list] (case (:sort-list @data) 5 6 5)))}
-                                "Арендная ставка руб. кв.м/год с НДС без КП"
+                                "Арендная ставка предложения, руб./кв.м в год с НДС без КП"
                      )
 
                   )
@@ -520,15 +558,15 @@
                      (if (:showcoeff @commerce/app-state)
                         (case (:approach (:object @commerce/app-state))
                         0 (dom/div {:className (case (:showcoeff @commerce/app-state) true "col-xs-6" "col-xs-0") :style {:cursor "pointer" :padding "0px" :padding-top "5px" :text-align "center" :background-image (case (:sort-list @data) 7 "url(images/sort_asc.png" 8 "url(images/sort_desc.png" "url(images/sort_both.png") :background-repeat "no-repeat" :background-position "right center"} :onClick (fn [e] (swap! commerce/app-state assoc-in [:sort-list] (case (:sort-list @data) 7 8 7)))}
-                                    "Цена предложения/Скорректированная, руб./кв.м. (с учетом НДС)"
+                                    "Цена предложения/Скорректированная цена, руб./кв.м (с учетом НДС)"
                         )
 
                           1 (dom/div {:className (case (:showcoeff @commerce/app-state) true "col-xs-6" "col-xs-0") :style {:cursor "pointer" :padding "0px" :padding-top "5px" :text-align "center" :background-image (case (:sort-list @data) 7 "url(images/sort_asc.png" 8 "url(images/sort_desc.png" "url(images/sort_both.png") :background-repeat "no-repeat" :background-position "right center"} :onClick (fn [e] (swap! commerce/app-state assoc-in [:sort-list] (case (:sort-list @data) 7 8 7)))}
-                                    "Скорректированная арендная ставка, руб. кв.м/год с НДС без КП"
+                                    "Скорректированная арендная ставка предложения, руб./кв.м в год с НДС без КП"
                         )
 
                         2 (dom/div {:className (case (:showcoeff @commerce/app-state) true "col-xs-6" "col-xs-0") :style {:cursor "pointer" :padding "0px" :padding-top "5px" :text-align "center" :background-image (case (:sort-list @data) 7 "url(images/sort_asc.png" 8 "url(images/sort_desc.png" "url(images/sort_both.png") :background-repeat "no-repeat" :background-position "right center"} :onClick (fn [e] (swap! commerce/app-state assoc-in [:sort-list] (case (:sort-list @data) 7 8 7)))}
-                                    "Скорректированная арендная ставка, руб. кв.м/год с НДС без КП"
+                                    "Скорректированная арендная ставка предложения, руб./кв.м в год с НДС без КП"
                         )
 
 
@@ -584,6 +622,9 @@
                   )
                 )
               )
+                        (dom/div {:className "col-xs-1" :style {:text-align "center"}} "Участвует в расчете"
+                        )
+
             )
           )
           (dom/div {:className "panel panel-body" :style {:padding "0px"}}
@@ -593,29 +634,34 @@
                 rowstyle (if (= 0 (:isdepr item)) {:margin-right "0px" :margin-left "0px" } {:margin-right "0px" :margin-left "0px" :background-color "beige"})
                 ]
                 (dom/div {:className "row tablerow" :style rowstyle}
-                  (dom/div {:className (if (:showcoeff @commerce/app-state) "col-xs-2" "col-xs-5") :style {:text-align "left" :border "1px solid lightgrey" :padding-left "0px" :padding-right "0px" :padding-top "6px" :overflow "hidden" :padding-bottom "6px"}}
+                  (dom/div {:className (if (:showcoeff @commerce/app-state) "col-xs-2" "col-xs-4") :style {:text-align "left" :border "1px solid lightgrey" :padding-left "0px" :padding-right "0px" :padding-top "6px" :overflow "hidden" :padding-bottom "6px"}}
                     (dom/h4 {:className "list-group-item-heading" :style {:font-weight "normal" :white-space "nowrap"}} (dom/a {:className "list-group-item" :style {:padding "0px" :border "none" :background "transparent"} :onClick (fn [e] (showimage (:screenshot item))) }
-                    (str (+ idx 1) ". "   (:address item))
+                    (str (+ 1 idx) ". "   (:address item))
                     ))
                   )
 
-                  (dom/div {:className "col-xs-1" :style {:text-align "center" :padding-left "0px" :border "1px solid lightgrey" :padding-top "6px" :overflow "hidden" :padding-bottom "6px"}}
+                  (dom/div {:className "col-xs-1" :style {:text-align "center" :padding-left "0px" :border "1px solid lightgrey" :padding-top "6px" :padding-right "0px" :overflow "hidden" :padding-bottom "6px"}}
                     (dom/h4 {:className "list-group-item-heading" :style {:font-weight "normal" :white-space "nowrap"}} (dom/a {:className "list-group-item" :style {:padding "0px" :border "none" :background "transparent"} :href (str "" (:source item)) :target "_blank"}
                     (:repair item)
                     ))
                   )
 
-                  (dom/div {:className (if (:showcoeff @commerce/app-state) "col-xs-1" "col-xs-1") :style {:text-align "center" :padding-left "0px" :border "1px solid lightgrey" :padding-top "6px" :overflow "hidden" :padding-bottom "6px"}}
+                  (dom/div {:className (if (:showcoeff @commerce/app-state) "col-xs-1" "col-xs-1") :style {:text-align "center" :padding-left "0px" :padding-right "0px" :border "1px solid lightgrey" :padding-top "6px" :overflow "hidden" :padding-bottom "6px"}}
                     (dom/h4 {:className "list-group-item-heading" :style {:font-weight "normal" :white-space "nowrap" :padding-bottom (if (> (count (:entrance item)) 0) "0px" "14px")}} (dom/a {:className "list-group-item" :style {:padding "0px" :border "none" :background "transparent"} :href (str "" (:source item)) :target "_blank"}
                     (:entrance item)
                     ))
                   )
 
-                  (dom/div {:className (if (:showcoeff @commerce/app-state) "col-xs-1" "col-xs-1") :style {:text-align "center" :border "1px solid lightgrey" :padding-top "6px" :padding-left "0px" :padding-right "0px" :overflow "hidden" :padding-bottom "6px"}}
-                    (dom/h4 {:className "list-group-item-heading" :style {:font-weight "normal" :white-space "nowrap" :padding-bottom (if (> (count (:houseline item)) 0) "0px" "14px")}} (dom/a {:className "list-group-item" :style {:padding "0px" :border "none" :background "transparent"} :href (str "" (:source item)) :target "_blank"}
-                    (:houseline item)
-                    ))
-                  )
+
+                  (if (not (:showcoeff @commerce/app-state))
+
+                     (dom/div {:className (if (:showcoeff @commerce/app-state) "col-xs-1" "col-xs-1") :style {:text-align "center" :border "1px solid lightgrey" :padding-top "6px" :padding-left "0px" :padding-right "0px" :overflow "hidden" :padding-bottom "6px"}}
+                       (dom/h4 {:className "list-group-item-heading" :style {:font-weight "normal" :white-space "nowrap" :padding-bottom (if (> (count (:houseline item)) 0) "0px" "14px")}} (dom/a {:className "list-group-item" :style {:padding "0px" :border "none" :background "transparent"} :href (str "" (:source item)) :target "_blank"}
+                       (:houseline item)
+                       ))
+                     )
+                   )
+
 
                   (if (not (:showcoeff @commerce/app-state))
                      (dom/div {:className "col-xs-2"}
@@ -701,43 +747,46 @@
 
 
                   (if (:showcoeff @commerce/app-state)
-                    (dom/div {:className "col-xs-3 koeff" :style {:margin-top "10px"}}
+                    (dom/div {:className "col-xs-3 koeff"}
                       (dom/div {:className "row"}
-                        (dom/div {:className "col-xs-1" :style {:font-size "xx-small" :cursor "pointer" :padding-left "0px" :padding-right "3px" :padding-top "0px" :text-align "center"}}
+                        (dom/div {:className "col-xs-1" :style {:font-size "xx-small" :cursor "pointer" :padding-left "0px" :padding-right "3px" :padding-top "10px" :padding-bottom "10px" :text-align "center" :border "1px solid lightgrey"}}
                           (str (commerce/split-thousands (gstring/format "%.2f" (:koeff0 item))))
                         )
-                        (dom/div {:className "col-xs-1" :style {:font-size "xx-small" :cursor "pointer" :padding-left "0px" :padding-right "3px" :padding-top "0px" :text-align "center"}}
+                        (dom/div {:className "col-xs-1" :style {:font-size "xx-small" :cursor "pointer" :padding-left "0px" :padding-right "3px" :padding-top "10px" :padding-bottom "10px" :text-align "center" :border "1px solid lightgrey"}}
                           (str (commerce/split-thousands (gstring/format "%.2f" (:koeff1 item))))
                         )
-                        (dom/div {:className "col-xs-1" :style {:font-size "xx-small" :cursor "pointer" :padding-left "0px" :padding-right "3px" :padding-top "0px" :text-align "center"}}
+                        (dom/div {:className "col-xs-1" :style {:font-size "xx-small" :cursor "pointer" :padding-left "0px" :padding-right "3px" :padding-top "10px" :padding-bottom "10px" :text-align "center" :border "1px solid lightgrey"}}
                           (gstring/format "%.2f" (:koeff2 item))
                         )
-                        (dom/div {:className "col-xs-1" :style {:font-size "xx-small" :cursor "pointer" :padding-left "0px" :padding-right "3px" :padding-top "0px" :text-align "center"}}
+                        (dom/div {:className "col-xs-1" :style {:font-size "xx-small" :cursor "pointer" :padding-left "0px" :padding-right "3px" :padding-top "10px" :padding-bottom "10px" :text-align "center" :border "1px solid lightgrey"}}
                           (gstring/format "%.2f" (:koeff3 item))
                         )
-                        (dom/div {:className "col-xs-1" :style {:font-size "xx-small" :cursor "pointer" :padding-left "0px" :padding-right "3px" :padding-top "0px" :text-align "center"}}
+                        (dom/div {:className "col-xs-1" :style {:font-size "xx-small" :cursor "pointer" :padding-left "0px" :padding-right "3px" :padding-top "10px" :padding-bottom "10px" :text-align "center" :border "1px solid lightgrey"}}
                           (gstring/format "%.2f" (:koeff4 item))
                         )
-                        (dom/div {:className "col-xs-1" :style {:font-size "xx-small" :cursor "pointer" :padding-left "0px" :padding-right "3px" :padding-top "0px" :text-align "center"}}
+                        (dom/div {:className "col-xs-1" :style {:font-size "xx-small" :cursor "pointer" :padding-left "0px" :padding-right "3px" :padding-top "10px" :padding-bottom "10px" :text-align "center" :border "1px solid lightgrey"}}
                           (gstring/format "%.2f" (:koeff5 item))
                         )
-                        (dom/div {:className "col-xs-1" :style {:font-size "xx-small" :cursor "pointer" :padding-left "0px" :padding-right "3px" :padding-top "0px" :text-align "center"}}
+                        (dom/div {:className "col-xs-1" :style {:font-size "xx-small" :cursor "pointer" :padding-left "0px" :padding-right "3px" :padding-top "10px" :padding-bottom "10px" :text-align "center" :border "1px solid lightgrey"}}
                           (gstring/format "%.2f" (:koeff6 item))
                         )
-                        (dom/div {:className "col-xs-1" :style {:font-size "xx-small" :cursor "pointer" :padding-left "0px" :padding-right "3px" :padding-top "0px" :text-align "center"}}
-                          (gstring/format "%.2f" (:koeff7 item))
+                        (dom/div {:className "col-xs-1" :style {:font-size "xx-small" :cursor "pointer" :padding-left "0px" :padding-right "3px" :padding-top "10px" :padding-bottom "10px" :text-align "center" :border "1px solid lightgrey"}}
+                          (gstring/format "%.0f" (:koeff7 item))
                         )
-                        (dom/div {:className "col-xs-1" :style {:font-size "xx-small" :cursor "pointer" :padding-left "0px" :padding-right "3px" :padding-top "0px" :text-align "center"}}
+                        (dom/div {:className "col-xs-1" :style {:font-size "xx-small" :cursor "pointer" :padding-left "0px" :padding-right "3px" :padding-top "10px" :padding-bottom "10px" :text-align "center" :border "1px solid lightgrey"}}
                           (gstring/format "%.2f" (:koeff8 item))
                         )
-                        (dom/div {:className "col-xs-1" :style {:font-size "xx-small" :cursor "pointer" :padding-left "0px" :padding-right "3px" :padding-top "0px" :text-align "center"}}
+                        (dom/div {:className "col-xs-1" :style {:font-size "xx-small" :cursor "pointer" :padding-left "0px" :padding-right "3px" :padding-top "10px" :padding-bottom "10px" :text-align "center" :border "1px solid lightgrey"}}
                           (gstring/format "%.2f" (:koeff9 item))
                         )
-                        (dom/div {:className "col" :style {:font-size "xx-small" :cursor "pointer" :padding-left "0px" :padding-right "3px" :padding-top "0px" :text-align "center"}}
+                        (dom/div {:className "col" :style {:font-size "xx-small" :cursor "pointer" :padding-left "0px" :padding-right "3px" :padding-top "10px" :padding-bottom "10px" :text-align "center" :border "1px solid lightgrey"}}
                           (gstring/format "%.2f" (:koeff item))
                         )
                       ))
                   )
+                (dom/div {:className "col-xs-1" :style {:text-align "center"}}
+                  (dom/input {:id (str "isanalog" (:id item)) :type "checkbox" :style {:height "32px" :margin-top "1px"} :checked (:isinclude item) :onChange (fn [e] (handle-chkb-change e ))})
+                )
 
 
                   ;; (case (:key (om/get-state owner))
@@ -751,6 +800,7 @@
                   
                  
                 )
+
               )
               )(sort (comp comp-analogs) ((keyword (:key (om/get-state owner))) (:object @commerce/app-state)))
             )
@@ -787,7 +837,7 @@
               ;; )
               (dom/div {:className "row"}
                  (dom/div {:className "col-xs-6"}
-                    "Арендная ставка объекта оценки, руб./кв.м. в год"
+                    "Арендная ставка объекта оценки, руб./кв.м в год"
                  )
                  (dom/div {:className "col-xs-2" :style {:text-align "right"}}
                     (commerce/split-thousands (gstring/format "%.2f" (:koeff4 (:object @commerce/app-state))))
@@ -990,16 +1040,16 @@
     address (get analog "address")
     totalsquare (get analog "totalsquare")
     repair (get analog "repair")
-    repair (if (or (= "" repair) (nil? repair)) "не известно" repair)
+    repair (if (or (= "" repair) (nil? repair)) "Н/Д" repair)
     assignment (get analog "assignment")
     price (get analog "price")
     source (get analog "source")
     lat (get analog "latitude")
     lon (get analog "longitude")
-    entrance (get analog "entrance")
-    isbuildingliving (if (nil? (get analog "isbuildingliving")) "Неизвестно" (if (get analog "isbuildingliving") "Жилой" "Нежилой")) 
-    hasshopwindows (get analog "hasshopwindows")
-    houseline  (get analog "houselinetype")
+    entrance (if (nil? (get analog "entrance")) "Н/Д" (get analog "entrance"))
+    isbuildingliving (if (nil? (get analog "isbuildingliving")) "Н/Д" (if (get analog "isbuildingliving") "Жилой" "Нежилой")) 
+    hasshopwindows (if (or (= "false" (get analog "hasshopwindows"))) "нет" "есть")
+    houseline (if (nil? (get analog "houselinetype")) "Н/Д" (get analog "houselinetype"))
     floor (get analog "floor")
     koeff (get analog "koeff")
     koeff1 (get analog "koeff1")
@@ -1020,7 +1070,7 @@
     ;; screenshot (nth analog 19)
     ]
     ;(.log js/console (str "id: " idx "; koeff1:" koeff1))
-    {:id idx :index idx :city city :price price :totalsquare totalsquare :address address :district district :repair repair :source source :pricepermetr pricepermetr :assignment assignment :lat lat :lon lon :koeff koeff :koeff1 koeff1 :koeff2 koeff2 :koeff3 koeff3 :koeff4 koeff4 :koeff5 koeff5 :koeff6 koeff6 :koeff7 koeff7 :koeff8 koeff8 :koeff9 koeff9 :koeff0 (if (= 1 isdepr) 1 0.925) :screenshot screenshot :entrance entrance :isbuildingliving isbuildingliving :hasshopwindows hasshopwindows :houseline houseline :floor floor :price_correction price_correction :isdepr isdepr}
+    {:id idx :index idx :city city :price price :totalsquare totalsquare :address address :district district :repair repair :source source :pricepermetr pricepermetr :assignment assignment :lat lat :lon lon :koeff koeff :koeff1 koeff1 :koeff2 koeff2 :koeff3 koeff3 :koeff4 koeff4 :koeff5 koeff5 :koeff6 koeff6 :koeff7 koeff7 :koeff8 koeff8 :koeff9 koeff9 :koeff0 (if (= 1 isdepr) 1 0.925) :screenshot screenshot :entrance entrance :isbuildingliving isbuildingliving :hasshopwindows hasshopwindows :houseline houseline :floor floor :price_correction price_correction :isdepr isdepr :isinclude true}
   )
 )
 
@@ -1043,7 +1093,7 @@
       "<div style=\"text-align: left; margin-bottom: 0px; margin-top: 5px  \">" "Наличие витринных окон: " (:hasshopwindows analog) "</div>"
       "<div style=\"text-align: left; margin-bottom: 0px; margin-top: 5px  \">" "Тип здания: " (:isbuildingliving analog) "</div>"
       "<div style=\"text-align: left; margin-bottom: 0px; margin-top: 5px  \">" "Этаж: " (:floor analog) "</div>"
-      "<div style=\"text-align: center; margin-bottom: 0px; margin-top: 5px  \">"  (case (:approach (:object @commerce/app-state)) 0 "Цена: " 1 "Арендная ставка (руб, кв.м в год): " 2 "Арендная ставка (руб, кв.м в год): ")  (commerce/split-thousands (gstring/format "%.0f" (if (nil? (:price analog)) 0.0 (:price analog)) )) " р." "</div>"
+      "<div style=\"text-align: center; margin-bottom: 0px; margin-top: 5px  \">"  (case (:approach (:object @commerce/app-state)) 0 "Цена: " 1 "Арендная ставка (руб./кв.м в год): " 2 "Арендная ставка (руб./кв.м в год): ")  (commerce/split-thousands (gstring/format "%.0f" (if (nil? (:price analog)) 0.0 (:price analog)) )) " р." "</div>"
       "</div>")
 
     window-options (clj->js {"content" wnd1})
@@ -1516,7 +1566,7 @@
                   )
                   (dom/label {:style {:margin-left "10px"}}
                     (dom/input {:id "approach12" :type "radio" :checked (if (= 2 (:approach (:object @data))) true false) :onChange (fn [e] (if (.. e -nativeEvent -target -checked) (swap! commerce/app-state assoc-in [:object :approach] 2))) :value (if (= 2 (:approach (:object @data))) true false) :style {:margin-right "5px"}})
-                    "Арендный"
+                    "Аренда"
                   )
                 )
               )
@@ -1801,14 +1851,14 @@
                   (dom/div {:className "row" :style {}}
                     (dom/div {:className "col-xs-7" :style {:text-align "left"}}
                       (if (= (:approach (:object @commerce/app-state)) 2)
-                          (str "Арендная ставка объекта оценки, руб/кв.м в год (с учетом НДС без учета КП): " (commerce/split-thousands (gstring/format "%.2f" (:pricePerMetr (:object @commerce/app-state)))) " р.")
-                          (str "Цена: " (commerce/split-thousands (gstring/format "%.2f" (:data (:object @commerce/app-state)))) " р.")
+                          (str "Арендная ставка объекта оценки, руб./кв.м в год (с учетом НДС и ЭР без учета КП): " (commerce/split-thousands (gstring/format "%.2f" (:pricePerMetr (:object @commerce/app-state)))) " р.")
+                          (str "Цена предложения: " (commerce/split-thousands (gstring/format "%.2f" (:data (:object @commerce/app-state)))) " р. (с учетом НДС)")
                       )
 
                     )
                     (if (not= (:approach (:object @commerce/app-state)) 2)
-                      (dom/div {:className "col-xs-3" :style {:text-align "left"}}
-                        (str "Цена за метр: " (commerce/split-thousands (gstring/format "%.2f" (:pricePerMetr (:object @commerce/app-state)))) " р.")
+                      (dom/div {:className "col-xs-5" :style {:text-align "left"}}
+                        (str "Цена предложения за метр: " (commerce/split-thousands (gstring/format "%.2f" (:pricePerMetr (:object @commerce/app-state)))) " р. (с учетом НДС)")
                       )
                     )
 
