@@ -152,54 +152,11 @@
 )
 
 
-(defn OnGetZKHData [response]
-  (let[]
-    (swap! commerce/app-state assoc-in [:object :buildingyear] (get response "buildingyear"))
-    (swap! commerce/app-state assoc-in [:object :foundation] (get response "foundation"))
-    (swap! commerce/app-state assoc-in [:object :housetype] (get response "house"))
-    (swap! commerce/app-state assoc-in [:object :buildingtype] (get response "housetype"))
-    (swap! commerce/app-state assoc-in [:object :project] (get response "project"))
-    (swap! commerce/app-state assoc-in [:object :storeysnum] (get response "storeysnum"))
-    (swap! commerce/app-state assoc-in [:object :city] (if (= (get response "region") "Московская") "Московская область" "Москва"))
-    (swap! commerce/app-state assoc-in [:state] 0)
-    (jquery
-      (fn []
-        (-> (jquery "#city")
-          (.selectpicker "val" (:city (:object @commerce/app-state)))
-        )
-      )
-    )
-    (jquery
-      (fn []
-        (-> (jquery "#buildingtype")
-          (.selectpicker "val" (:buildingtype (:object @commerce/app-state)))
-        )
-      )
-    )
-    ;;(.log js/console response)
-  )
-)
 
 (defn downloadreport []
   (aset js/window "location" (str "/report"))
   (put! ch 57)
 )
-
-
-(defn getzkhdata [address]
-  (let [
-    ;status (js/parseInt (:statuses (:filter @app-state)))
-    ;user (:user (:filter @app-state))
-    ]
-    (swap! commerce/app-state assoc-in [:state] 1)
-    (GET (str "http://api.residential.eliz.site/api/" "getzkh?address=" address) {
-      :handler OnGetZKHData
-      :error-handler error-handler-zkh
-      :response-format :json
-    })
-  )
-)
-
 
 
 (defn addplace [place]
@@ -228,7 +185,7 @@
   (let [
     size (js/google.maps.Size. 48 48)
     image (clj->js {:url (str iconBase "green_point.ico") :scaledSize size})
-    marker-options (clj->js {"position" (google.maps.LatLng. (:lat (:device @commerce/app-state)), (:lon (:device @commerce/app-state))) "map" (:map @commerce/app-state) "title" (:name (:device @commerce/app-state))})
+    marker-options (clj->js {"position" (google.maps.LatLng. (:lat (:object @commerce/app-state)), (:lon (:object @commerce/app-state))) "map" (:map @commerce/app-state) "title" (:name (:device @commerce/app-state))})
 
     marker (js/google.maps.Marker. marker-options)
     
@@ -237,6 +194,7 @@
     searchbox (js/google.maps.places.SearchBox. input)
     ;tr1 (.log js/console input)
     ]
+    (set! (.-value input) (:address (:object @commerce/app-state))) 
     (swap! commerce/app-state assoc-in [:marker] marker)
     (.push (aget (.-controls (:map @commerce/app-state)) 1) input)
     (if (not (nil? (:marker @commerce/app-state))) (.setMap (:marker @commerce/app-state) (:map @commerce/app-state)))
@@ -418,7 +376,21 @@
 
 )
 
+(defn load-saved-analogs []
+   (let [
+    
+    ]
+    (swap! commerce/app-state assoc-in [:object :analogs] ((keyword (str (:approach (:object @commerce/app-state)))) (:savedanalogs @commerce/app-state)))
+   )
+)
 
+(defn save-analogs []
+  (let [
+
+    ]
+    (swap! commerce/app-state assoc-in [:savedanalogs (keyword (str (:approach (:object @commerce/app-state))))] (:analogs (:object @commerce/app-state)))
+  )
+)
 
 (defn handle-change [e owner]
   ;(.log js/console e)
@@ -468,6 +440,7 @@
       (swap! commerce/app-state assoc-in [:object :price0] newdata)
       (if (= 1 (:approach (:object @commerce/app-state)))
          (swap! commerce/app-state assoc-in [:object :price1] newdata)
+         (swap! commerce/app-state assoc-in [:object :price2]  newprice)
       )
     )
     (put! ch 45)
@@ -516,8 +489,6 @@
     ]
     (recalculate-price filtered)
     (swap! commerce/app-state assoc-in [:object :analogs] newanalogs)
-
-    
   )
 )
 
@@ -586,7 +557,7 @@
 
                   (case (:approach (:object @commerce/app-state))
                     0 (dom/div {:className (if (:showcoeff @commerce/app-state) "col-xs-6" "col-xs-10") :style {:cursor "pointer" :padding-left "0px" :padding-right "3px" :padding-top "5px" :text-align "center" :background-image (case (:sort-list @data) 5 "url(images/sort_asc.png" 6 "url(images/sort_desc.png" "url(images/sort_both.png") :background-repeat "no-repeat" :background-position "right center"} :onClick (fn [e] (swap! commerce/app-state assoc-in [:sort-list] (case (:sort-list @data) 5 6 5)))}
-                                 "Цена, руб."
+                                 "Цена предложения, руб."
                      )
                     1 (dom/div {:className (if (:showcoeff @commerce/app-state) "col-xs-6" "col-xs-10") :style {:cursor "pointer" :padding-left "0px" :padding-right "3px" :padding-top "5px" :text-align "center" :background-image (case (:sort-list @data) 5 "url(images/sort_asc.png" 6 "url(images/sort_desc.png" "url(images/sort_both.png") :background-repeat "no-repeat" :background-position "right center"} :onClick (fn [e] (swap! commerce/app-state assoc-in [:sort-list] (case (:sort-list @data) 5 6 5)))}
                                 "Арендная ставка предложения, руб./кв.м в год с НДС без КП"
@@ -685,13 +656,13 @@
                   )
 
                   (dom/div {:className "col-xs-1" :style {:text-align "center" :padding-left "0px" :border "1px solid lightgrey" :padding-top "6px" :padding-right "0px" :overflow "hidden" :padding-bottom "6px"}}
-                    (dom/h4 {:className "list-group-item-heading" :style {:font-weight "normal" :white-space "nowrap"}} (dom/a {:className "list-group-item" :style {:padding "0px" :border "none" :background "transparent"} :href (str "" (:source item)) :target "_blank"}
+                    (dom/h4 {:className "list-group-item-heading" :style {:font-weight "normal" :white-space "nowrap"}} (dom/a {:className "list-group-item" :style {:padding "0px" :border "none" :background "transparent"} :href (str "" (:url item)) :target "_blank"}
                     (:repair item)
                     ))
                   )
 
                   (dom/div {:className (if (:showcoeff @commerce/app-state) "col-xs-1" "col-xs-1") :style {:text-align "center" :padding-left "0px" :padding-right "0px" :border "1px solid lightgrey" :padding-top "6px" :overflow "hidden" :padding-bottom "6px"}}
-                    (dom/h4 {:className "list-group-item-heading" :style {:font-weight "normal" :white-space "nowrap" :padding-bottom (if (> (count (:entrance item)) 0) "0px" "14px")}} (dom/a {:className "list-group-item" :style {:padding "0px" :border "none" :background "transparent"} :href (str "" (:source item)) :target "_blank"}
+                    (dom/h4 {:className "list-group-item-heading" :style {:font-weight "normal" :white-space "nowrap" :padding-bottom (if (> (count (:entrance item)) 0) "0px" "14px")}} (dom/a {:className "list-group-item" :style {:padding "0px" :border "none" :background "transparent"} :href (str "" (:url item)) :target "_blank"}
                     (:entrance item)
                     ))
                   )
@@ -700,7 +671,7 @@
                   (if (not (:showcoeff @commerce/app-state))
 
                      (dom/div {:className (if (:showcoeff @commerce/app-state) "col-xs-1" "col-xs-1") :style {:text-align "center" :border "1px solid lightgrey" :padding-top "6px" :padding-left "0px" :padding-right "0px" :overflow "hidden" :padding-bottom "6px"}}
-                       (dom/h4 {:className "list-group-item-heading" :style {:font-weight "normal" :white-space "nowrap" :padding-bottom (if (> (count (:houseline item)) 0) "0px" "14px")}} (dom/a {:className "list-group-item" :style {:padding "0px" :border "none" :background "transparent"} :href (str "" (:source item)) :target "_blank"}
+                       (dom/h4 {:className "list-group-item-heading" :style {:font-weight "normal" :white-space "nowrap" :padding-bottom (if (> (count (:houseline item)) 0) "0px" "14px")}} (dom/a {:className "list-group-item" :style {:padding "0px" :border "none" :background "transparent"} :href (str "" (:url item)) :target "_blank"}
                        (:houseline item)
                        ))
                      )
@@ -711,19 +682,19 @@
                      (dom/div {:className "col-xs-2"}
                         (dom/div {:className "row"}
                            (dom/div {:className (if (:showcoeff @commerce/app-state) "col-xs-5" "col-xs-5") :style {:text-align "left" :border "1px solid lightgrey" :padding-top "6px" :overflow "hidden" :padding-bottom "6px"}}
-                             (dom/h4 {:className "list-group-item-heading" :style {:font-weight "normal" :white-space "nowrap" :padding-bottom (if (> (count (:hasshopwindows item)) 0) "0px" "14px")}} (dom/a {:className "list-group-item" :style {:padding "0px" :border "none" :background "transparent"} :href (str "" (:source item)) :target "_blank"}
+                             (dom/h4 {:className "list-group-item-heading" :style {:font-weight "normal" :white-space "nowrap" :padding-bottom (if (> (count (:hasshopwindows item)) 0) "0px" "14px")}} (dom/a {:className "list-group-item" :style {:padding "0px" :border "none" :background "transparent"} :href (str "" (:url item)) :target "_blank"}
                              (:hasshopwindows item)
                              ))
                            )
                            (dom/div {:className (if (:showcoeff @commerce/app-state) "col-xs-4" "col-xs-4") :style {:text-align "left" :border "1px solid lightgrey" :padding-top "6px" :overflow "hidden" :padding-bottom "6px"}}
-                             (dom/h4 {:className "list-group-item-heading" :style {:font-weight "normal" :white-space "nowrap" :padding-bottom (if (> (count (:isbuildingliving item)) 0) "0px" "14px")}} (dom/a {:className "list-group-item" :style {:padding "0px" :border "none" :background "transparent"} :href (str "" (:source item)) :target "_blank"}
+                             (dom/h4 {:className "list-group-item-heading" :style {:font-weight "normal" :white-space "nowrap" :padding-bottom (if (> (count (:isbuildingliving item)) 0) "0px" "14px")}} (dom/a {:className "list-group-item" :style {:padding "0px" :border "none" :background "transparent"} :href (str "" (:url item)) :target "_blank"}
                              (:isbuildingliving item)
                              ))
                            )
 
                            (if (not (:showcoeff @commerce/app-state))
                              (dom/div {:className "col-xs-3" :style {:text-align "center" :border "1px solid lightgrey" :padding-top "6px" :overflow "hidden" :padding-bottom "6px"}}
-                               (dom/h4 {:className "list-group-item-heading" :style {:font-weight "normal" :white-space "nowrap" :padding-bottom (if (> (count (str (:floor item)) ) 0) "0px" "14px")}} (dom/a {:className "list-group-item" :style {:padding "0px" :border "none" :background "transparent"} :href (str "" (:source item)) :target "_blank"}
+                               (dom/h4 {:className "list-group-item-heading" :style {:font-weight "normal" :white-space "nowrap" :padding-bottom (if (> (count (str (:floor item)) ) 0) "0px" "14px")}} (dom/a {:className "list-group-item" :style {:padding "0px" :border "none" :background "transparent"} :href (str "" (:url item)) :target "_blank"}
                                  (:floor item)
                                 ))
                              )
@@ -732,7 +703,7 @@
                      )
                   )
                   (dom/div {:className "col-xs-1" :style {:text-align "right" :border "1px solid lightgrey" :padding-top "6px" :padding-bottom "6px"}}
-                    (dom/h4 {:className "list-group-item-heading" :style {:font-weight "normal" :white-space "nowrap"}} (dom/a {:className "list-group-item" :style {:padding "0px" :border "none" :background "transparent"} :href (str "" (:source item))}
+                    (dom/h4 {:className "list-group-item-heading" :style {:font-weight "normal" :white-space "nowrap"}} (dom/a {:className "list-group-item" :style {:padding "0px" :border "none" :background "transparent"} :href (str "" (:url item))  :target "_blank"}
                     (:totalsquare item)
                     ))
                   )
@@ -745,18 +716,18 @@
                      (dom/div {:className "row"}
                         (case (:approach (:object @commerce/app-state))
                           0 (dom/div {:className (if (:showcoeff @commerce/app-state) "col-xs-6" "col-xs-12") :style {:text-align "right" :border "1px solid lightgrey" :padding-top "6px" :padding-bottom "6px"}}
-                            (dom/h4 {:className "list-group-item-heading" :style {:font-weight "normal" :white-space "nowrap"}} (dom/a {:className "list-group-item" :style {:padding "0px" :border "none" :background "transparent"} :href (str "" (:source item))}
+                            (dom/h4 {:className "list-group-item-heading" :style {:font-weight "normal" :white-space "nowrap"}} (dom/a {:className "list-group-item" :style {:padding "0px" :border "none" :background "transparent"} :href (str "" (:url item)) :target "_blank"}
                             (str (commerce/split-thousands (gstring/format "%.0f" (if (nil? (:price item)) 0.0 (:price item)) )))
                             ))
                           )
                           1 (dom/div {:className (if (:showcoeff @commerce/app-state) "col-xs-6" "col-xs-12") :style {:text-align "right" :border "1px solid lightgrey" :padding-top "6px" :padding-bottom "6px"}}
-                            (dom/h4 {:className "list-group-item-heading" :style {:font-weight "normal" :white-space "nowrap"}} (dom/a {:className "list-group-item" :style {:padding "0px" :border "none" :background "transparent"} :href (str "" (:source item))}
+                            (dom/h4 {:className "list-group-item-heading" :style {:font-weight "normal" :white-space "nowrap"}} (dom/a {:className "list-group-item" :style {:padding "0px" :border "none" :background "transparent"} :href (str "" (:url item)) :target "_blank"}
                             (str (commerce/split-thousands (gstring/format "%.0f" (if (nil? (:price item)) 0.0 (:price item)) )) )
                             ))
                           )
 
                           2 (dom/div {:className (if (:showcoeff @commerce/app-state) "col-xs-6" "col-xs-12") :style {:text-align "right" :border "1px solid lightgrey" :padding-top "6px" :padding-bottom "6px"}}
-                            (dom/h4 {:className "list-group-item-heading" :style {:font-weight "normal" :white-space "nowrap"}} (dom/a {:className "list-group-item" :style {:padding "0px" :border "none" :background "transparent"} :href (str "" (:source item))}
+                            (dom/h4 {:className "list-group-item-heading" :style {:font-weight "normal" :white-space "nowrap"}} (dom/a {:className "list-group-item" :style {:padding "0px" :border "none" :background "transparent"} :href (str "" (:url item)) :target "_blank"}
                             (str (commerce/split-thousands (gstring/format "%.0f" (if (nil? (:price item)) 0.0 (:price item)) )) )
                             ))
                           )
@@ -765,19 +736,19 @@
                         (if (:showcoeff @commerce/app-state)
                           (case (:approach (:object @commerce/app-state))
                           0 (dom/div {:className "col-xs-6" :style {:text-align "right" :border "1px solid lightgrey" :padding-top "6px" :padding-bottom "6px"}}
-                            (dom/h4 {:className "list-group-item-heading" :style {:font-weight "normal" :white-space "nowrap"}} (dom/a {:className "list-group-item" :style {:padding "0px" :border "none" :background "transparent"} :href (str "" (:source item))}
+                            (dom/h4 {:className "list-group-item-heading" :style {:font-weight "normal" :white-space "nowrap"}} (dom/a {:className "list-group-item" :style {:padding "0px" :border "none" :background "transparent"} :href (str "" (:url item)) :target "_blank"}
                             (str (commerce/split-thousands (gstring/format "%.0f" (* (if (= 0 (:approach (:object @commerce/app-state))) 1.0 12.0) (:pricepermetr item)) )) " / " (commerce/split-thousands (gstring/format "%.0f" (/ (:price_correction item) (:totalsquare item)) ))) 
 
                             ))
                           )
                           1 (dom/div {:className "col-xs-6" :style {:text-align "right" :border "1px solid lightgrey" :padding-top "6px" :padding-bottom "6px"}}
-                            (dom/h4 {:className "list-group-item-heading" :style {:font-weight "normal" :white-space "nowrap"}} (dom/a {:className "list-group-item" :style {:padding "0px" :border "none" :background "transparent"} :href (str "" (:source item))}
+                            (dom/h4 {:className "list-group-item-heading" :style {:font-weight "normal" :white-space "nowrap"}} (dom/a {:className "list-group-item" :style {:padding "0px" :border "none" :background "transparent"} :href (str "" (:url item)) :target "_blank"}
                             (str (commerce/split-thousands (gstring/format "%.0f" (:price_correction item) ))) 
 
                             ))
                           )
                           2 (dom/div {:className "col-xs-6" :style {:text-align "right" :border "1px solid lightgrey" :padding-top "6px" :padding-bottom "6px"}}
-                            (dom/h4 {:className "list-group-item-heading" :style {:font-weight "normal" :white-space "nowrap"}} (dom/a {:className "list-group-item" :style {:padding "0px" :border "none" :background "transparent"} :href (str "" (:source item))}
+                            (dom/h4 {:className "list-group-item-heading" :style {:font-weight "normal" :white-space "nowrap"}} (dom/a {:className "list-group-item" :style {:padding "0px" :border "none" :background "transparent"} :href (str "" (:url item)) :target "_blank"}
                             (str (commerce/split-thousands (gstring/format "%.0f" (:price_correction item) ))) 
 
                             ))
@@ -881,7 +852,7 @@
               ;; )
               (dom/div {:className "row"}
                  (dom/div {:className "col-xs-6"}
-                    "Арендная ставка объекта оценки, руб./кв.м в год"
+                    "Арендная ставка объекта оценки (в состоянии \"стандартный ремонт\"), руб./кв.м в год"
                  )
                  (dom/div {:className "col-xs-2" :style {:text-align "right"}}
                     (commerce/split-thousands (gstring/format "%.2f" (:koeff4 (:object @commerce/app-state))))
@@ -1087,7 +1058,7 @@
     repair (if (or (= "" repair) (nil? repair)) "Н/Д" repair)
     assignment (get analog "assignment")
     price (get analog "price")
-    source (get analog "source")
+    url (get analog "url")
     lat (get analog "latitude")
     lon (get analog "longitude")
     entrance (if (nil? (get analog "entrance")) "Н/Д" (get analog "entrance"))
@@ -1114,7 +1085,7 @@
     ;; screenshot (nth analog 19)
     ]
     (.log js/console (str "isdepr: " isdepr))
-    {:id idx :index idx :city city :price price :totalsquare totalsquare :address address :district district :repair repair :source source :pricepermetr pricepermetr :assignment assignment :lat lat :lon lon :koeff koeff :koeff1 koeff1 :koeff2 koeff2 :koeff3 koeff3 :koeff4 koeff4 :koeff5 koeff5 :koeff6 koeff6 :koeff7 koeff7 :koeff8 koeff8 :koeff9 koeff9 :koeff0 (if (= 1 isdepr) 1 0.925) :screenshot screenshot :entrance entrance :isbuildingliving isbuildingliving :hasshopwindows hasshopwindows :houseline houseline :floor floor :price_correction price_correction :isdepr isdepr :isinclude true}
+    {:id idx :index idx :city city :price price :totalsquare totalsquare :address address :district district :repair repair :url url :pricepermetr pricepermetr :assignment assignment :lat lat :lon lon :koeff koeff :koeff1 koeff1 :koeff2 koeff2 :koeff3 koeff3 :koeff4 koeff4 :koeff5 koeff5 :koeff6 koeff6 :koeff7 koeff7 :koeff8 koeff8 :koeff9 koeff9 :koeff0 (if (= 1 isdepr) 1 0.925) :screenshot screenshot :entrance entrance :isbuildingliving isbuildingliving :hasshopwindows hasshopwindows :houseline houseline :floor floor :price_correction price_correction :isdepr isdepr :isinclude true}
   )
 )
 
@@ -1237,6 +1208,7 @@
       (swap! commerce/app-state assoc-in [:object :price0] price)
       (if (= 1 (:approach (:object @commerce/app-state)))
          (swap! commerce/app-state assoc-in [:object :price1] price)
+         (swap! commerce/app-state assoc-in [:object :price2] (get response "avrgPricePerMetrCorrection"))
       )
     )
     (swap! commerce/app-state assoc-in [:object :koeff1] (get response "koeff1"))
@@ -1261,6 +1233,8 @@
 
     (swap! commerce/app-state assoc-in [:state] 0)
     (put! ch 45)
+    (put! ch 48)
+    (put! ch 50)
     ;(.log js/console (str "count analogs=" (count (:analogs (:object @commerce/app-state))) "var=" (count analogs)) )
   )
 )
@@ -1388,6 +1362,9 @@
        )
     44 (swap! commerce/app-state assoc-in [:showmap] -1)
     45 (updateMarkers)
+    47 (load-saved-analogs)
+    48 (save-analogs)
+    50 (recalculate-price (:analogs (:object @commerce/app-state)))
     56 (go
          (<! (timeout 5000))
          (downloadreport)
@@ -1424,6 +1401,7 @@
   (swap! commerce/app-state assoc-in [:current] 
     "Object detail"
   )
+  (.log js/console "onmount event")
   (set! (.-title js/document) "Price calculation")
   (setcontrols 46)
   (put! ch 43)
@@ -1556,6 +1534,7 @@
 
                     (swap! commerce/app-state assoc-in [:object :lat] (.lat (.. e -latLng)))
                     (swap! commerce/app-state assoc-in [:object :lon] (.lng (.. e -latLng)))
+                    (swap! commerce/app-state assoc-in [:object :address] "")
                     (swap! commerce/app-state assoc-in [:marker] marker)
                     (.stopPropagation (.. js/window -event))
                     (.stopImmediatePropagation (.. js/window -event))
@@ -1629,15 +1608,15 @@
               (dom/div {:className "col-xs-8 col-sm-4" :style {:margin-top "4px" :padding-right "0px" :padding-left "0px"}}
                 (dom/form
                   (dom/label 
-                    (dom/input {:id "approach" :type "radio" :checked (if (= 0 (:approach (:object @data))) true false) :onChange (fn [e] (if (.. e -nativeEvent -target -checked) (swap! commerce/app-state assoc-in [:object :approach] 0))) :value (if (= 0 (:approach (:object @data))) true false) :style {:margin-right "5px"}})
+                    (dom/input {:id "approach" :type "radio" :checked (if (= 0 (:approach (:object @data))) true false) :onChange (fn [e] (let [] (save-analogs) (if (.. e -nativeEvent -target -checked) (swap! commerce/app-state assoc-in [:object :approach] 0)) (put! ch 47))) :value (if (= 0 (:approach (:object @data))) true false) :style {:margin-right "5px"}})
                     "Сравнительный"
                   )
                   (dom/label {:style {:margin-left "10px"}}
-                    (dom/input {:id "approach1" :type "radio" :checked (if (= 1 (:approach (:object @data))) true false) :onChange (fn [e] (if (.. e -nativeEvent -target -checked) (swap! commerce/app-state assoc-in [:object :approach] 1))) :value (if (= 1 (:approach (:object @data))) true false) :style {:margin-right "5px"}})
+                    (dom/input {:id "approach1" :type "radio" :checked (if (= 1 (:approach (:object @data))) true false) :onChange (fn [e] (let [] (save-analogs) (if (.. e -nativeEvent -target -checked) (swap! commerce/app-state assoc-in [:object :approach] 1)) (put! ch 47))) :value (if (= 1 (:approach (:object @data))) true false) :style {:margin-right "5px"}})
                     "Доходный"
                   )
                   (dom/label {:style {:margin-left "10px"}}
-                    (dom/input {:id "approach12" :type "radio" :checked (if (= 2 (:approach (:object @data))) true false) :onChange (fn [e] (if (.. e -nativeEvent -target -checked) (swap! commerce/app-state assoc-in [:object :approach] 2))) :value (if (= 2 (:approach (:object @data))) true false) :style {:margin-right "5px"}})
+                    (dom/input {:id "approach12" :type "radio" :checked (if (= 2 (:approach (:object @data))) true false) :onChange (fn [e] (let [] (save-analogs) (if (.. e -nativeEvent -target -checked) (swap! commerce/app-state assoc-in [:object :approach] 2)) (put! ch 47))) :value (if (= 2 (:approach (:object @data))) true false) :style {:margin-right "5px"}})
                     "Аренда"
                   )
                 )
@@ -1670,26 +1649,26 @@
               )
             )
 
-            (dom/div {:className "row"}
-              (dom/div {:className "col-xs-3 col-xs-offset-0 col-sm-2 col-sm-offset-3" :style {:padding-left "0px" :padding-right "0px"}}
-                (dom/h5 (str "Назначение объекта:"))
-              )
-              (dom/div {:className "col-xs-8 col-sm-4" :style {:margin-top "4px" :padding-right "0px" :padding-left "0px"}}
-                (omdom/select #js {:id "assignment"
-                                   :className "selectpicker"
-                                   :data-width "100%"
-                                   :data-style "btn-default"
-                                   :data-show-subtext "false"
-                                   :data-live-search "true"
-                                   :onChange #(handle-change % owner)
-                                   }                
-                  (buildAssignmentsList data owner)
-                )
-              )
-              (dom/div {:className "col-xs-1" :style {:margin-top "4px" :padding-right "0px" :padding-left "30px" :text-align "left"}}
-                (dom/span {:className "asterisk"} "*")
-              )
-            )
+            ;; (dom/div {:className "row"}
+            ;;   (dom/div {:className "col-xs-3 col-xs-offset-0 col-sm-2 col-sm-offset-3" :style {:padding-left "0px" :padding-right "0px"}}
+            ;;     (dom/h5 (str "Назначение объекта:"))
+            ;;   )
+            ;;   (dom/div {:className "col-xs-8 col-sm-4" :style {:margin-top "4px" :padding-right "0px" :padding-left "0px"}}
+            ;;     (omdom/select #js {:id "assignment"
+            ;;                        :className "selectpicker"
+            ;;                        :data-width "100%"
+            ;;                        :data-style "btn-default"
+            ;;                        :data-show-subtext "false"
+            ;;                        :data-live-search "true"
+            ;;                        :onChange #(handle-change % owner)
+            ;;                        }                
+            ;;       (buildAssignmentsList data owner)
+            ;;     )
+            ;;   )
+            ;;   (dom/div {:className "col-xs-1" :style {:margin-top "4px" :padding-right "0px" :padding-left "30px" :text-align "left"}}
+            ;;     (dom/span {:className "asterisk"} "*")
+            ;;   )
+            ;; )
 
             (dom/div {:className "row"}
               (dom/div {:className "col-xs-3 col-xs-offset-0 col-sm-2 col-sm-offset-3" :style {:padding-left "0px" :padding-right "0px"}}
@@ -1908,19 +1887,24 @@
               (dom/div {:className "col-xs-4" :style {:text-align "center"}}
                 (b/button {:className (if (= (:state @data) 0) "btn btn-primary" "btn btn-primary m-progress") :onClick (fn [e] (getdata))} "Получить стоимость")
               )
-              (if (= (:approach (:object @commerce/app-state)) 0)
-              (dom/div
-                 (dom/div {:className "col-xs-2" :style {:text-align "center"}}
-                   (dom/input {:id "includedepr" :type "checkbox" :checked (:includedepr (:object @commerce/app-state)) :onChange (fn [e] (handle-chkb-depr e))})
-                     (dom/label {:for "includedepr" :style {:margin-left "10px"}} "Включить аналоги ДЭПР")
-                 )
-                 (dom/div {:className "col-xs-2" :style {:text-align "center"}}
-                   (dom/input {:id "includenondepr" :type "checkbox" :checked (:includenondepr (:object @commerce/app-state)) :onChange (fn [e] (handle-chkb-nondepr e))})
-                     (dom/label {:for "includenondepr" :style {:margin-left "10px"}} "Включить аналоги НЕ ДЭПР")
-                 )
-              )
+              (if (>= (:approach (:object @commerce/app-state)) 0)
+                (dom/div
+                   (dom/div {:className "col-xs-3" :style {:text-align "center" :padding-top "5px"}}
+                     (dom/input {:id "includedepr" :type "checkbox" :checked (:includedepr (:object @commerce/app-state)) :onChange (fn [e] (handle-chkb-depr e))})
+                       (dom/label {:for "includedepr" :style {:margin-left "10px"}} "Включить аналоги ДЭПР")
+                   )
+                   (dom/div {:className "col-xs-3" :style {:text-align "center" :padding-top "5px"}}
+                     (dom/input {:id "includenondepr" :type "checkbox" :checked (:includenondepr (:object @commerce/app-state)) :onChange (fn [e] (handle-chkb-nondepr e))})
+                       (dom/label {:for "includenondepr" :style {:margin-left "10px"}} "Включить аналоги НЕ ДЭПР")
+                   )
+                )
+                (dom/div {:className "col-xs-4"})
 
               )
+
+              ;; (dom/div {:className "col-xs-2" :style {:text-align "center"}}
+              ;;   (b/button {:className "btn btn-primary" :title "Сохранить текущие аналоги, при возврате в данный подход все аналоги, участвующие в расчете останутся неизменными" :disabled? (if (> (count (:analogs (:object @commerce/app-state))) 0) false true) :onClick (fn [e] (save-analogs))} "Сохраниить")
+              ;; )
             )
             (dom/div {:style {:display (if (= (:state @data) 0) "block" "none")}}
               (dom/div {:className "panel panel-primary" :style {:margin-top "10px" :margin-bottom "10px" :display (if (= 0.0 (:data (:object @commerce/app-state))) "none" "block")}}
@@ -1928,19 +1912,22 @@
                   (dom/div {:className "row" :style {}}
                     (dom/div {:className (case (:approach (:object @commerce/app-state)) 2 "col-xs-7" "col-xs-4")  :style {:text-align "left"}}
                       (if (= (:approach (:object @commerce/app-state)) 2)
-                          (str "Арендная ставка объекта оценки, руб./кв.м в год (с учетом НДС и ЭР без учета КП): " (commerce/split-thousands (gstring/format "%.2f" (:pricePerMetr (:object @commerce/app-state)))) " р.")
-                          (str "Цена предложения: " (commerce/split-thousands (gstring/format "%.2f" (if (= 0 (:approach (:object @commerce/app-state))) (:price0 (:object @commerce/app-state)) (:price1 (:object @commerce/app-state))))) " р. (с учетом НДС)")
+                          (str "Арендная ставка объекта оценки, руб./кв.м в год (с учетом НДС и ЭР без учета КП): " (commerce/split-thousands (gstring/format "%.0f" (:price2 (:object @commerce/app-state)))) " р.")
+                          (str "Стоимость: " (commerce/split-thousands (gstring/format "%.0f" (if (= 0 (:approach (:object @commerce/app-state))) (:price0 (:object @commerce/app-state)) (:price1 (:object @commerce/app-state))))) " р. (с учетом НДС)")
                       )
 
                     )
                     (if (and (> (:price0 (:object @commerce/app-state)) 0) (> (:price1 (:object @commerce/app-state)) 0) (not= (:approach (:object @commerce/app-state)) 2))
-                      (dom/div {:className "col-xs-3" :style {:text-align "left"}}
-                        (str "Среднняя цена предложения: " (commerce/split-thousands (gstring/format "%.2f" (/ (+ (:price0 (:object @commerce/app-state)) (:price1 (:object @commerce/app-state))) 2.0) )) " р. (с учетом НДС)")
+                      (dom/div {:className "col-xs-4" :style {:text-align "left"}}
+                        (str "Стоимость на основе двух подходов: " (commerce/split-thousands (gstring/format "%.0f" (/ (+ (:price0 (:object @commerce/app-state)) (:price1 (:object @commerce/app-state))) 2.0) )) " р. (с учетом НДС)")
                       )
                     )
+                    (if (not= (:approach (:object @commerce/app-state)) 2)
                       (dom/div {:className "col-xs-4" :style {:text-align "left"}}
-                        (str "Цена предложения за метр: " (commerce/split-thousands (gstring/format "%.2f" (:pricePerMetr (:object @commerce/app-state)))) " р. (с учетом НДС)")
+                        (str "Стоимость за метр: " (commerce/split-thousands (gstring/format "%.0f" (/ ((keyword (str "price" (:approach (:object @commerce/app-state)))) (:object @commerce/app-state)) (:totalsquare (:object @commerce/app-state))) (:pricePerMetr (:object @commerce/app-state)))) " р. (с учетом НДС)")
                       )
+                    )
+
                   )
 
                 )

@@ -126,18 +126,36 @@
 )
 
 (defn gotomain [item]
-  (swap! commerce/app-state assoc-in [:object :approach] (:approach item))
-  (swap! commerce/app-state assoc-in [:object :address] (:address item))
-  (swap! commerce/app-state assoc-in [:object :totalsquare] (:totalsquare item))
-  (swap! commerce/app-state assoc-in [:object :storey] (:floor item))
-  (swap! commerce/app-state assoc-in [:object :repair] (:repair item))
-  (swap! commerce/app-state assoc-in [:object :isentrance] (:entrance item))
-  (swap! commerce/app-state assoc-in [:object :houseline] (:houseline item))
-  (swap! commerce/app-state assoc-in [:object :hasshopwindows] (:hasshopwindows item))
-  (swap! commerce/app-state assoc-in [:object :isbuildingliving] (:isbuildingliving item))
-  (swap! commerce/app-state assoc-in [:object :lat] (:lat item))
-  (swap! commerce/app-state assoc-in [:object :lon] (:lon item))
-  (put! ch 49)
+  (let [
+    size (js/google.maps.Size. 48 48)
+    image (clj->js {:url (str iconBase "green_point.ico") :scaledSize size})
+
+    marker-options (clj->js {"position" (google.maps.LatLng. (:lat item), (:lon item)) "map" map})
+    marker (js/google.maps.Marker. marker-options)
+    ]
+    ;(if (not (nil? (:marker @commerce/app-state))) (.setMap (:marker @commerce/app-state) nil))
+    ;(.log js/console (str "LatLng=" (.. e -latLng)))
+    (swap! commerce/app-state assoc-in [:marker] marker)
+    (.stopPropagation (.. js/window -event))
+    (.stopImmediatePropagation (.. js/window -event))
+
+    (swap! commerce/app-state assoc-in [:object :approach] (:approach item))
+    (swap! commerce/app-state assoc-in [:object :address] (:address item))
+    (swap! commerce/app-state assoc-in [:object :totalsquare] (:totalsquare item))
+    (swap! commerce/app-state assoc-in [:object :storey] (:floor item))
+    (swap! commerce/app-state assoc-in [:object :repair] (:repair item))
+    (swap! commerce/app-state assoc-in [:object :isentrance] (:entrance item))
+    (swap! commerce/app-state assoc-in [:object :houseline] (:houseline item))
+    (swap! commerce/app-state assoc-in [:object :hasshopwindows] (:hasshopwindows item))
+    (swap! commerce/app-state assoc-in [:object :isbuildingliving] (:isbuildingliving item))
+    (swap! commerce/app-state assoc-in [:object :lat] (:lat item))
+    (swap! commerce/app-state assoc-in [:object :lon] (:lon item))
+    (swap! commerce/app-state assoc-in [:object :analogscount] (:analogs item))
+
+
+    (put! ch 49)
+  )
+
 )
 
 (defn handleChange [e]
@@ -360,7 +378,7 @@
               ;; (dom/div {:className "col-xs-5  col-xs-offset-0" :style {:text-align "center"}}
               ;;   "Адрес"
               ;; )
-              (dom/div {:id "address" :className "col-xs-5" :style {:cursor "pointer" :padding-left "0px" :padding-right "3px" :padding-top "5px" :text-align "center" :background-image (case (:sort-list @data) 1 "url(images/sort_asc.png" 2 "url(images/sort_desc.png" "url(images/sort_both.png") :background-repeat "no-repeat" :background-position "right center"} :onClick (fn [e] (swap! commerce/app-state assoc-in [:sort-list] (case (:sort-list @data) 1 2 1)))}
+              (dom/div {:id "address" :className "col-xs-4" :style {:cursor "pointer" :padding-left "0px" :padding-right "3px" :padding-top "5px" :text-align "center" :background-image (case (:sort-list @data) 1 "url(images/sort_asc.png" 2 "url(images/sort_desc.png" "url(images/sort_both.png") :background-repeat "no-repeat" :background-position "right center"} :onClick (fn [e] (swap! commerce/app-state assoc-in [:sort-list] (case (:sort-list @data) 1 2 1)))}
                           "Адрес"
                         )
 
@@ -398,7 +416,9 @@
                           "Общая площадь"
               )
 
-
+              (dom/div {:className (if (:showcoeff @commerce/app-state) "col-xs-1" "col-xs-1") :style {:cursor "pointer" :padding-left "0px" :padding-right "3px" :padding-top "5px" :text-align "center" :background-image (case (:sort-list @data) 3 "url(images/sort_asc.png" 4 "url(images/sort_desc.png" "url(images/sort_both.png") :background-repeat "no-repeat" :background-position "right center"} :onClick (fn [e] (swap! commerce/app-state assoc-in [:sort-list] (case (:sort-list @data) 3 4 3)))}
+                          "Количество аналогов"
+              )
             )
           )
           (dom/div {:className "panel panel-body" :style {:padding "0px"}}
@@ -409,7 +429,7 @@
                 rowstyle {:margin-right "0px" :margin-left "0px" }
                 ]
                 (dom/div {:className "row tablerow" :style rowstyle :onClick (fn [e] (gotomain item))}
-                  (dom/div {:className "col-xs-5":style {:text-align "left" :border "1px solid lightgrey" :padding-left "0px" :padding-right "0px" :padding-top "6px" :overflow "hidden" :padding-bottom "6px"}}
+                  (dom/div {:className "col-xs-4":style {:text-align "left" :border "1px solid lightgrey" :padding-left "0px" :padding-right "0px" :padding-top "6px" :overflow "hidden" :padding-bottom "6px"}}
                     (dom/h4 {:className "list-group-item-heading" :style {:font-weight "normal" :white-space "nowrap"}} (dom/a {:className "list-group-item" :style {:padding "0px" :border "none" :background "transparent"}}
                     (str (+ idx 1) ". "   (:address item))
                     ))
@@ -462,7 +482,13 @@
                     (dom/h4 {:className "list-group-item-heading" :style {:font-weight "normal" :white-space "nowrap"}} (dom/a {:className "list-group-item" :style {:padding "0px" :border "none" :background "transparent"}}
                     (:totalsquare item)
                     ))
-                  )                 
+                  )
+
+                  (dom/div {:className "col-xs-1" :style {:text-align "right" :border "1px solid lightgrey" :padding-top "6px" :padding-bottom "6px"}}
+                    (dom/h4 {:className "list-group-item-heading" :style {:font-weight "normal" :white-space "nowrap"}} (dom/a {:className "list-group-item" :style {:padding "0px" :border "none" :background "transparent"}}
+                    (:analogs item)
+                    ))
+                  )                
                 )
               )
               ) ((keyword (:key (om/get-state owner))) (:object @commerce/app-state))
@@ -488,7 +514,8 @@
     hasshopwindows (get analog "shopwindows")
     houseline (get analog "houseline")
     floor (get analog "storey")
-    res {:id idx :index idx :approach approach :totalsquare totalsquare :address address :repair repair :assignment assignment :lat lat :lon lon :isbuildingliving isbuildingliving :hasshopwindows hasshopwindows :entrance entrance :houseline houseline :floor floor}
+    analogs (get analog "analogs")
+    res {:id idx :index idx :approach approach :totalsquare totalsquare :address address :repair repair :assignment assignment :lat lat :lon lon :isbuildingliving isbuildingliving :hasshopwindows hasshopwindows :entrance entrance :houseline houseline :floor floor :analogs analogs}
     ]
     (.log js/console (str res))
     res
